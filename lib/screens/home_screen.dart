@@ -21,7 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(title: const Text("Task Manager")),
       body: Column(
         children: [
-          // 🔍 Search
+          // SEARCH
           Padding(
             padding: const EdgeInsets.all(10),
             child: TextField(
@@ -31,32 +31,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) {
-                setState(() {
-                  searchQuery = value;
-                });
+                setState(() => searchQuery = value);
               },
             ),
           ),
 
-          // 🔽 Filter
+          // FILTER
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: DropdownButtonFormField<String>(
-              value: selectedFilter,
+              initialValue: selectedFilter,
               decoration: const InputDecoration(
                 labelText: "Filter by Status",
                 border: OutlineInputBorder(),
               ),
               items: ["All", "To-Do", "In Progress", "Done"]
-                  .map((status) => DropdownMenuItem(
-                        value: status,
-                        child: Text(status),
-                      ))
+                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                   .toList(),
               onChanged: (value) {
-                setState(() {
-                  selectedFilter = value!;
-                });
+                setState(() => selectedFilter = value!);
               },
             ),
           ),
@@ -71,12 +64,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     itemBuilder: (context, index) {
                       final task = tasks[index];
 
+                      // SEARCH FILTER
                       if (!task.title
                           .toLowerCase()
                           .contains(searchQuery.toLowerCase())) {
                         return const SizedBox();
                       }
 
+                      // STATUS FILTER
                       if (selectedFilter != "All") {
                         String statusText =
                             task.status == TaskStatus.todo
@@ -90,46 +85,58 @@ class _HomeScreenState extends State<HomeScreen> {
                         }
                       }
 
+                      // BLOCKED LOGIC
                       bool isBlocked = task.blockedBy != null &&
                           tasks.any((t) =>
                               t.id == task.blockedBy &&
                               t.status != TaskStatus.done);
 
-                      return Dismissible(
-                        key: Key(task.id),
-                        background: Container(
-                          color: Colors.red,
-                          padding: const EdgeInsets.only(left: 20),
-                          alignment: Alignment.centerLeft,
-                          child:
-                              const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        onDismissed: (_) {
-                          setState(() {
-                            tasks.removeAt(index);
-                          });
-                        },
-                        child: Card(
-                          color: isBlocked ? Colors.grey[300] : null,
-                          child: ListTile(
-                            title: Text(task.title),
-                            subtitle: Text(task.description),
-                            trailing: Text(task.status.name),
-                            onTap: () async {
-                              final updatedTask = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      AddTaskScreen(task: task, tasks: tasks),
-                                ),
-                              );
+                      return Card(
+                        color: isBlocked ? Colors.grey[300] : null,
+                        margin: const EdgeInsets.all(10),
+                        child: ListTile(
+                          title: Text(task.title),
+                          subtitle: Text(task.description),
 
-                              if (updatedTask != null) {
-                                setState(() {
-                                  tasks[index] = updatedTask;
-                                });
-                              }
-                            },
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(task.status.name),
+
+                              // EDIT
+                              IconButton(
+                                icon: const Icon(Icons.edit),
+                                onPressed: () async {
+                                  final updatedTask =
+                                      await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => AddTaskScreen(
+                                        task: task,
+                                        tasks: tasks,
+                                      ),
+                                    ),
+                                  );
+
+                                  if (updatedTask != null) {
+                                    setState(() {
+                                      tasks[index] = updatedTask;
+                                    });
+                                  }
+                                },
+                              ),
+
+                              // DELETE
+                              IconButton(
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.red),
+                                onPressed: () {
+                                  setState(() {
+                                    tasks.removeAt(index);
+                                  });
+                                },
+                              ),
+                            ],
                           ),
                         ),
                       );

@@ -46,23 +46,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString("title", titleController.text);
     await prefs.setString("description", descriptionController.text);
-    await prefs.setString("status", selectedStatus);
-    await prefs.setString(
-        "date", selectedDate?.toIso8601String() ?? "");
   }
 
   Future<void> loadDraft() async {
     final prefs = await SharedPreferences.getInstance();
-
     titleController.text = prefs.getString("title") ?? "";
-    descriptionController.text = prefs.getString("description") ?? "";
-    selectedStatus = prefs.getString("status") ?? "To-Do";
-
-    String? date = prefs.getString("date");
-    if (date != null && date.isNotEmpty) {
-      selectedDate = DateTime.parse(date);
-    }
-
+    descriptionController.text =
+        prefs.getString("description") ?? "";
     setState(() {});
   }
 
@@ -86,7 +76,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
             TextField(
               controller: descriptionController,
-              decoration: const InputDecoration(labelText: "Description"),
+              decoration:
+                  const InputDecoration(labelText: "Description"),
               onChanged: (_) => saveDraft(),
             ),
 
@@ -100,10 +91,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 );
 
                 if (picked != null) {
-                  setState(() {
-                    selectedDate = picked;
-                  });
-                  saveDraft();
+                  setState(() => selectedDate = picked);
                 }
               },
               child: Text(selectedDate == null
@@ -112,34 +100,29 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
 
             DropdownButtonFormField(
-              value: selectedStatus,
+              initialValue: selectedStatus,
               items: ["To-Do", "In Progress", "Done"]
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                  .map((e) => DropdownMenuItem(
+                      value: e, child: Text(e)))
                   .toList(),
               onChanged: (value) {
-                setState(() {
-                  selectedStatus = value!;
-                });
-                saveDraft();
+                setState(() => selectedStatus = value!);
               },
             ),
 
             DropdownButtonFormField<String>(
-              value: selectedBlockedTaskId,
+              initialValue: selectedBlockedTaskId,
               hint: const Text("Blocked By"),
               items: [
-                const DropdownMenuItem(value: null, child: Text("None")),
-                ...widget.tasks.map(
-                  (task) => DropdownMenuItem(
-                    value: task.id,
-                    child: Text(task.title),
-                  ),
-                ),
+                const DropdownMenuItem(
+                    value: null, child: Text("None")),
+                ...widget.tasks.map((task) => DropdownMenuItem(
+                      value: task.id,
+                      child: Text(task.title),
+                    )),
               ],
               onChanged: (value) {
-                setState(() {
-                  selectedBlockedTaskId = value;
-                });
+                setState(() => selectedBlockedTaskId = value);
               },
             ),
 
@@ -151,7 +134,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   : () async {
                       if (titleController.text.isEmpty ||
                           descriptionController.text.isEmpty ||
-                          selectedDate == null) return;
+                          selectedDate == null) {
+                        return;
+                      }
 
                       setState(() => isLoading = true);
 
@@ -162,7 +147,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         id: widget.task?.id ??
                             DateTime.now().toString(),
                         title: titleController.text,
-                        description: descriptionController.text,
+                        description:
+                            descriptionController.text,
                         dueDate: selectedDate!,
                         status: selectedStatus == "To-Do"
                             ? TaskStatus.todo
@@ -174,8 +160,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
                       await clearDraft();
 
-                      setState(() => isLoading = false);
+                      if (!mounted) return;
 
+                      setState(() => isLoading = false);
                       Navigator.pop(context, newTask);
                     },
               child: isLoading
